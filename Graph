@@ -1,0 +1,235 @@
+import HeapPriorityQueue # https://github.com/CuongLee99/Funny_code/blob/master/Heap%20Priority%20Queue
+
+class Vertex:
+    def __init__(self, name, adj_list):
+        self.name = name
+        self.adj_list = []
+        if adj_list:
+            self.adj_list.extend(adj_list)
+
+    def add_adjacent_vertex(self, destination, weight):
+        if (destination, weight) in self.adj_list:
+            return
+        else:
+            self.adj_list.append((destination, weight))
+
+    def remove_adjacent_vertex(self, destination):
+        for item in self.adj_list:
+            if item.name == destination:
+                self.adj_list.remove(item)
+                return
+
+    def set_weight(self, destination, new_weight):
+        self.remove_adjacent_vertex(destination)
+        self.add_adjacent_vertex(destination, new_weight)
+
+    def show_adjacent_vertices(self):
+        for item in self.adj_list:
+            print("({}->{}), weight = {}".format(self.name, item[0], item[1]))
+
+
+class Graph:
+    def __init__(self, directed=False):
+        self.vertices = {}
+        self.directed = directed
+
+    def add_vertex(self, vertex_name, ajd_list=None):
+        if vertex_name in self.vertices:
+            raise Exception("Vertex {} existed!".format(vertex_name))
+        else:
+            self.vertices[vertex_name] = Vertex(vertex_name, ajd_list)
+        return
+
+    def add_edge(self, origin, destination, weight=0):
+        if origin not in self.vertices or destination not in self.vertices:
+            raise Exception("Vertex named {} or {} not exist!".format(origin, destination))
+        self.vertices[origin].add_adjacent_vertex(destination, weight)
+        if not self.directed:
+            self.vertices[destination].add_adjacent_vertex(origin, weight)
+
+    def show_edges(self):
+        for vertex_name in self.vertices:
+            self.vertices[vertex_name].show_adjacent_vertices()
+
+    def get_vertex(self, vertex_name):
+        if vertex_name not in self.vertices:
+            raise RuntimeError
+        return self.vertices[vertex_name]
+
+    def _deep_first_search(self, from_vertex, visited):
+        visited[from_vertex.name] = 1
+        print(from_vertex.name, "->", end='')
+        for vertex in from_vertex.adj_list:
+            if not visited[vertex[0]]:
+                self._deep_first_search(self.get_vertex(vertex[0]), visited)
+
+    def DFS(self, from_vertex):
+        print("DFS from", from_vertex, ":", end=' ')
+        visited = [0 for i in range(len(self.vertices)+1)]
+        self._deep_first_search(self.get_vertex(from_vertex), visited)
+        for vertex in self.vertices:
+            if not visited[vertex]:
+                self._deep_first_search(vertex, visited)
+        print("finish")
+
+    def _breadth_first_search(self, vertex, visited, vertex_queue):
+        print(vertex.name, "->", end='')
+        for adj in vertex.adj_list:
+            if not visited[adj[0]]:
+                visited[adj[0]] = 1
+                vertex_queue.append(self.get_vertex(adj[0]))
+
+    def BFS(self, from_vertex):
+        print("BFS from", from_vertex, ":", end=' ')
+        vertex_queue = []
+        visited = [0 for i in range(len(self.vertices)+1)]
+        vertex_queue.append(self.get_vertex(from_vertex))
+        visited[from_vertex] = 1
+        while len(vertex_queue):
+            top_vertex = vertex_queue.pop(0)
+            self._breadth_first_search(top_vertex, visited, vertex_queue)
+            if not len(vertex_queue):
+                for vertex in self.vertices:
+                    if not visited[vertex]:
+                        visited[vertex] = 1
+                        vertex_queue.append(self.get_vertex(vertex))
+                        break
+        print("finish")
+
+    def dijktra(self, from_vertex, to_vertex=None):
+        d = {}
+        priority_queue = HeapPriorityQueue()
+        solution = []
+        trace = {}
+        visited = [0 for i in range(len(self.vertices)+1)]
+        for vertex in self.vertices:
+            if vertex == from_vertex:
+                d[from_vertex] = 0
+            else:
+                d[vertex] = float("inf")
+        trace[from_vertex] = priority_queue.push(d[from_vertex], [None, self.get_vertex(from_vertex)])
+        while not priority_queue.is_empty():
+            item = priority_queue.pop()
+            solution.append(item)
+            if to_vertex:
+                if to_vertex == item.data[1].name:
+                    return solution
+            visited[item.data[1].name] = 1
+            for adj in item.data[1].adj_list:
+                if not visited[adj[0]] and item.key + adj[1] < d[adj[0]]:
+                    d[adj[0]] = item.key + adj[1]
+                    if adj[0] in trace:
+                        trace[adj[0]] = priority_queue.update(trace[adj[0]], d[adj[0]], [item.data[1], self.get_vertex(adj[0])])
+                    else:
+                        trace[adj[0]] = priority_queue.push(d[adj[0]], [item.data[1], self.get_vertex(adj[0])])
+        return solution
+
+    def find_shortest_path(self, from_vertex, to_vertex):
+        solution = self.dijktra(from_vertex, to_vertex)
+        cost = solution[-1].key
+        solu = [solution.pop(-1).data]
+        while len(solution) >1:
+            item = solution.pop(-1)
+            if item.data[1] == solu[-1][0]:
+                cost += item.key
+                solu.append(item.data)
+        print("Shortest path from {} to {}: {}".format(from_vertex, to_vertex, from_vertex), end='')
+        for ver in reversed(solu):
+            print("->{}".format(ver[1].name), end='')
+        print(". Total cost:", cost)
+
+    def Prim(self, from_vertex=1):
+        d = {}
+        priority_queue = HeapPriorityQueue()
+        solution = []
+        trace = {}
+        visited = [0 for i in range(len(self.vertices) + 1)]
+        for vertex in self.vertices:
+            if vertex == from_vertex:
+                d[from_vertex] = 0
+            else:
+                d[vertex] = float("inf")
+        trace[from_vertex] = priority_queue.push(d[from_vertex], [None, self.get_vertex(from_vertex)])
+        while not priority_queue.is_empty():
+            item = priority_queue.pop()
+            solution.append(item)
+            visited[item.data[1].name] = 1
+            for adj in item.data[1].adj_list:
+                if not visited[adj[0]] and adj[1] < d[adj[0]]:
+                    d[adj[0]] = adj[1]
+                    if adj[0] in trace:
+                        trace[adj[0]] = priority_queue.update(trace[adj[0]], d[adj[0]],
+                                                              [item.data[1], self.get_vertex(adj[0])])
+                    else:
+                        trace[adj[0]] = priority_queue.push(d[adj[0]], [item.data[1], self.get_vertex(adj[0])])
+        
+        print("MST by Prim:", end='')
+        sum = 0
+        for item in solution:
+            sum += item.key
+            if not item.data[0]:
+                continue
+            print(" ({}->{})".format(item.data[0].name, item.data[1].name), end='')
+        print(". Total weight: ", sum)
+
+    def Kruskal(self):
+        edges = HeapPriorityQueue()
+        cluster = {}
+        for vertex in self.vertices:
+            cluster[vertex] = [vertex]
+            for adj in self.vertices[vertex].adj_list:
+                edges.push(adj[1], (vertex, adj[0]))
+        n = len(self.vertices)
+        solution = []
+        while len(solution) < n - 1:
+            edge = edges.pop()
+            if edge.data[0] not in cluster[edge.data[1]]:
+                for item in cluster[edge.data[0]]:
+                    cluster[item].append(edge.data[1])
+                for item in cluster[edge.data[1]]:
+                    cluster[item].append(edge.data[0])
+                solution.append(edge)
+        print("MST by Kruskal:", end='')
+        sum = 0
+        for item in solution:
+            sum += item.key
+            print(" ({}->{})".format(item.data[0], item.data[1]), end='')
+        print(". Total weight: ", sum)
+
+
+
+
+if __name__ == "__main__":
+    graph = Graph()
+    graph.add_vertex(1, [(2, 0), (3, 0), (14, 0)])
+    graph.add_vertex(2, [(1, 0)])
+    graph.add_vertex(3, [(1, 0), (4, 0), (5, 0)])
+    graph.add_vertex(4, [(3, 0), (11, 0), (12, 0)])
+    graph.add_vertex(5, [(3, 0), (6, 0)])
+    graph.add_vertex(6, [(5, 0), (7, 0), (8, 0)])
+    graph.add_vertex(7, [(6, 0)])
+    graph.add_vertex(8, [(6, 0), (9, 0), (10, 0)])
+    graph.add_vertex(9, [(8, 0)])
+    graph.add_vertex(10, [(8, 0)])
+    graph.add_vertex(11, [(4, 0)])
+    graph.add_vertex(12, [(4, 0), (13, 0)])
+    graph.add_vertex(13, [(12, 0)])
+    graph.add_vertex(14, [(1, 0)])
+    graph.show_edges()
+    graph.DFS(1)
+    graph.BFS(1)
+
+    graph2 = Graph()
+    graph2.add_vertex(1, [(2, 1), (3, 20), (4, 40), (5, 10)])
+    graph2.add_vertex(2, [(6, 2)])
+    graph2.add_vertex(3, [(4, 3)])
+    graph2.add_vertex(4, [(1, 40), (3, 3), (5, 6)])
+    graph2.add_vertex(5, [(4, 6), (7, 1)])
+    graph2.add_vertex(6, [(5, 9), (7, 15)])
+    graph2.add_vertex(7)
+    graph2.show_edges()
+    graph2.find_shortest_path(1, 3)
+    graph2.Prim()
+    graph2.Kruskal()
+
+

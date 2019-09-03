@@ -1,6 +1,9 @@
 import HeapPriorityQueue # https://github.com/CuongLee99/Funny_code/blob/master/Heap%20Priority%20Queue
 
 class Vertex:
+    '''
+    for each vertex u, store list [(v, w),...], u is adjacent vertex of v and w is weight of edge (u, v)
+    '''
     def __init__(self, name, adj_list):
         self.name = name
         self.adj_list = []
@@ -30,8 +33,8 @@ class Vertex:
 
 class Graph:
     def __init__(self, directed=False):
-        self.vertices = {}
-        self.directed = directed
+        self.vertices = {}         # key is the name of vertex which map to its Vertex class item
+        self.directed = directed   # undirected graph by default
 
     def add_vertex(self, vertex_name, ajd_list=None):
         if vertex_name in self.vertices:

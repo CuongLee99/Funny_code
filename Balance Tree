@@ -1,0 +1,140 @@
+class Node:
+    def __init__(self, key=None, data=None):
+        self.data = data
+        self.key = key
+        self.left = None
+        self.right = None
+
+    def __lt__(self, other):
+        return self.key < other.key
+
+    def __eq__(self, other):
+        return self.key == other.key
+
+    def __ne__(self, other):
+        return not (self == other)
+        
+        
+class BalanceTree:
+    def __init__(self):
+        self.node = None
+
+    def is_leaf(self):
+        return self.node.right.is_empty_node() and self.node.left.is_empty_node()
+
+    def is_empty_node(self):
+        return not self.node
+
+    def pre_oder(self):
+        if self.is_empty_node():
+            return
+        print(self.node.data)
+        self.node.left.pre_oder()
+        self.node.right.pre_oder()
+
+    def height(self):
+        if self.is_empty_node():
+            return -1
+        if self.is_leaf():
+            return 0
+        h1 = self.node.left.height()
+        h2 = self.node.right.height()
+        return 1 + max(h1, h2)
+
+    def balance(self):
+        if self.is_empty_node():
+            return 0
+        if self.is_leaf():
+            return 0
+        else:
+            return self.node.left.height() - self.node.right.height()
+
+    def re_balance(self):
+        balance = self.balance()
+        if -1 <= balance <= 1:
+            return
+        else:
+            if balance == 2:
+                if self.node.left.balance() > 0:
+                    self.right_rotate()
+                else:
+                    self.node.left.left_rotate()
+                    self.right_rotate()
+            elif balance == -2:
+                if self.node.right.balance() < 0:
+                    self.left_rotate()
+                else:
+                    self.node.right.right_rotate()
+                    self.left_rotate()
+
+    def __insert(self, value):
+        if not self.node:
+            self.node = Node(data=value)
+            self.node.left = BalanceTree()
+            self.node.right = BalanceTree()
+            return
+        if value < self.node.data:
+            self.node.left.__insert(value)
+        else:
+            self.node.right.__insert(value)
+
+    def insert(self, value):
+        self.__insert(value)
+        self.re_balance()
+
+    def right_rotate(self):
+        a = self.node
+        b = a.left.node
+        c = b.right.node
+
+        self.node = b
+        b.right.node = a
+        a.left.node = c
+
+    def left_rotate(self):
+        a = self.node
+        b = a.right.node
+        c = b.left.node
+
+        self.node = b
+        b.left.node = a
+        a.right.node = c
+
+    def is_empty(self):
+        return not self.node
+
+    def find(self, key_node):
+        if self.is_empty():
+            return None
+        elif self.node.data == key_node:
+            return self
+        elif self.node.data < key_node:
+            return self.node.right.find(key_node)
+        else:
+            return self.node.left.find(key_node)
+
+    def find_min(self):
+        if self.is_empty():
+            raise Exception("Have no item in the tree.")
+        elif self.node.left.is_empty_node():
+            return self
+        else:
+            return self.node.left.find_min()
+
+    def delete(self, key_node):
+        node = self.find(key_node)
+        if node:
+            if node.is_leaf():
+                node.node = None
+                return
+            else:
+                if node.node.right.is_empty_node():
+                    node.node = node.node.left.node
+                else:
+                    replace = node.node.right.find_min()
+                    node.node.data = replace.node.data
+                    if replace.is_leaf():
+                        replace.node = None
+                    else:
+                        replace.node = replace.node.right.node
+            self.re_balance()

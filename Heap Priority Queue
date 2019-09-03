@@ -1,0 +1,100 @@
+class Node:
+    def __init__(self, key=None, data=None):
+        self.data = data
+        self.key = key
+        self.left = None
+        self.right = None
+
+    def __lt__(self, other):
+        return self.key < other.key
+
+    def __eq__(self, other):
+        return self.key == other.key
+
+    def __ne__(self, other):
+        return not (self == other)
+        
+        
+class HeapPriorityQueue:
+    """
+    use array to store pairs of value and key,
+    return the item has smallest key when pop item.
+    """
+    def __init__(self):
+        self._data_list = []
+
+    def __getitem__(self, item):
+        return self._data_list[item]
+
+    def _parent(self, i):
+        return (i-1)//2
+
+    def _left(self, i):
+        return 2 * i + 1
+
+    def _right(self, i):
+        return 2 * i + 2
+
+    def _has_left(self, i):
+        return self._left(i) < self.size()
+
+    def _has_right(self, i):
+        return self._right(i) < self.size()
+
+    def swap(self, i, j):
+        self._data_list[i], self._data_list[j] = self._data_list[j], self._data_list[i]
+
+    def is_empty(self):
+        return self.size() == 0
+
+    def heapify_down(self, i):
+        change = i
+        if self._has_left(i) and self[self._left(i)] < self[change]:
+            change = self._left(i)
+        if self._has_right(i) and self[self._right(i)] < self[change]:
+            change = self._right(i)
+
+        if change != i:
+            self.swap(i, change)
+            self.heapify_down(change)
+
+    def heapify_up(self, i):
+        parent = self._parent(i)
+        if i and self[i] < self[parent]:
+            self.swap(i, parent)
+            self.heapify_up(parent)
+
+    def size(self):
+        return len(self._data_list)
+
+    def push(self, key, value):
+        node = Node(key, value)
+        self._data_list.append(node)
+        self.heapify_up(self.size() - 1)
+        return node
+
+    def pop(self):
+        if self.is_empty():
+            raise Exception("Priority queue is empty!")
+        else:
+            self.swap(0, len(self._data_list) - 1)
+            item = self._data_list.pop(self.size() - 1)
+            self.heapify_down(0)
+            return item
+
+    def top(self):
+        if self.is_empty():
+            raise Exception("Priority queue is empty!")
+        else:
+            return self[0]
+
+    def delete(self, key):
+        for item in self._data_list:
+            if item.key == key:
+                self._data_list.remove(item)
+                return item
+
+    def update(self, old_item, new_key, new_item):
+        self.delete(old_item.key)
+        node = self.push(new_key, new_item)
+        return node

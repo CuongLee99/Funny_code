@@ -1,0 +1,81 @@
+problem detail: https://www.hackerrank.com/challenges/palindromic-border/problem
+import os
+MODULE = 1000000007
+
+def is_stupid_string(s, n):
+    for i in range(1, n):
+        if s[0] != s[i]:
+            return False
+    return True
+
+def kill_stupid_string(n):
+    output = 0
+    for i in range(1, n+1):
+        output += i*(i-1)//2
+    return output % MODULE
+
+def cal_substrings_num(palin_dict):
+    output = 0
+    for palin in palin_dict:
+        num = palin_dict[palin]
+        output += num*(num-1)//2
+    return output % MODULE
+
+def palindromicBorder(s):
+    n = len(s)
+    if is_stupid_string(s, n):
+        return kill_stupid_string(n)
+
+    output = 0
+    odd = [[], {}]
+    for i in range(n):
+        ch = s[i]
+        if ch in odd[1]:
+            odd[1][ch] += 1
+        else:
+            odd[1][ch] = 1
+        odd[0].append(i)
+    output += cal_substrings_num(odd[1])
+
+    even = [[], {}]
+    for i in range(n-1):
+        if s[i] == s[i+1]:
+            chs = s[i:i+2]
+            if chs in even[1]:
+                even[1][chs] += 1
+            else:
+                even[1][chs] = 1
+            even[0].append(i)
+    output += cal_substrings_num(even[1])
+
+    for L in range(3, n-1):
+        if L%2:
+            base = odd
+        else:
+            base = even
+        result = [[], {}]
+        for i in base[0]:
+            if i - 1 >= 0 and i + L - 2 < n and s[i-1] == s[i + L -2]:
+                palin = s[i-1:i+L-1]
+                if palin in result[1]:
+                    result[1][palin] += 1
+                else:
+                    result[1][palin] = 1
+                result[0].append(i-1)
+        output += cal_substrings_num(result[1])
+        if L%2:
+            odd = result
+        else:
+            even = result
+    return output % MODULE
+
+if __name__ == '__main__':
+    fptr = open(os.environ['OUTPUT_PATH'], 'w')
+
+    s = input()
+
+    result = palindromicBorder(s)
+
+    fptr.write(str(result) + '\n')
+
+    fptr.close()

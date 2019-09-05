@@ -88,13 +88,11 @@ class HeapPriorityQueue:
         else:
             return self[0]
 
-    def delete(self, key):
-        for item in self._data_list:
-            if item.key == key:
-                self._data_list.remove(item)
-                return item
+    def get_pos(self, item):
+        for i, obj in enumerate(self._data_list):
+            if obj is item:
+                return i
 
     def update(self, old_item, new_key, new_item):
-        self.delete(old_item.key)
-        node = self.push(new_key, new_item)
-        return node
+        old_item.update(new_key, new_item)
+        self.heapify_down(self.get_pos(old_item))

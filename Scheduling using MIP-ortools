@@ -1,0 +1,75 @@
+from ortools.linear_solver import pywraplp
+ # this code for Hieu, who has a dog brain 
+
+def main():
+    teachers_num = 3
+    objects_num = 13
+    t_max = 16
+    t_min = 10
+    t = [3, 3, 4, 3, 4, 3, 3, 3, 4, 3, 3, 4, 4]
+
+    expertise = [[1, 1, 0],
+                 [0, 1, 1],
+                 [1, 0, 1],
+                 [1, 1, 1],
+                 [1, 0, 0],
+                 [0, 1, 0],
+                 [0, 1, 0],
+                 [0, 1, 1],
+                 [1, 1, 0],
+                 [0, 0, 1],
+                 [1, 0, 0],
+                 [0, 0, 1],
+                 [0, 0, 1]]
+
+    conflict = [[0, 2, 4, 8],
+                [1, 4, 10],
+                [3, 7, 9],
+                [5, 11, 12],
+                [6, 8, 12]]
+
+    # create MIP solver
+    solver = pywraplp.Solver("Scheduling_example", pywraplp.Solver.CBC_MIXED_INTEGER_PROGRAMMING)
+
+    # create decided variable
+    x = {}
+    for i in range(teachers_num):
+        for j in range(objects_num):
+            # teacher i for object j
+            x[(i, j)] = solver.BoolVar("x[({}, {})]".format(i, j))
+
+    # create constraints
+    for j in range(objects_num):
+        solver.Add(sum(x[(i, j)] for i in range(teachers_num)) <= 1)
+        solver.Add(sum(x[(i, j)] * expertise[j][i] for i in range(teachers_num)) >= 1)
+
+    for item in conflict:
+        for obj in item[1:]:
+            for i in range(teachers_num):
+                solver.Add(x[(i, 0)] + x[(i, obj)] <= 1)
+
+    for i in range(teachers_num):
+        solver.Add(t_min <= sum(x[(i, j)] * t[j] for j in range(objects_num)) <= t_max)
+
+    # create objective function
+    for i in range(teachers_num):
+        solver.Minimize(sum(x[(i, j)] * t[j] for j in range(objects_num)))
+
+    res = solver.Solve()
+    assert res == pywraplp.Solver.OPTIMAL, "NON OPTIMAL SOLUTION"
+
+    print("Solution found:")
+    for i in range(teachers_num):
+        print("Teacher {}: ".format(i), end='')
+        total = 0
+        for j in range(objects_num):
+            if x[(i, j)].solution_value():
+                total += t[j]
+                print(j, end=" ")
+        print("\t Total = ", total)
+
+if __name__ == "__main__":
+    main()
+
+
+

@@ -1,0 +1,67 @@
+from ortools.sat.python import cp_model
+
+def main():
+    teachers = 3
+    objects = 13
+    t = [3, 3, 4, 3, 4, 3, 3, 3, 4, 3, 3, 4, 4]
+    max_periods_per_teacher = 15
+    min_periods_per_teacher = 10
+
+    expertise = [[1,1,0],
+                 [0,1,1],
+                 [1,0,1],
+                 [1,1,1],
+                 [1,0,0],
+                 [0,1,0],
+                 [0,1,0],
+                 [0,1,1],
+                 [1,1,0],
+                 [0,0,1],
+                 [1,0,0],
+                 [0,0,1],
+                 [0,0,1]]
+
+    conflict = [[0,2,4,8],
+                [1,4,10],
+                [3,7,9],
+                [5,11,12],
+                [6,8,12]]
+
+    model = cp_model.CpModel()
+
+    solution = {}
+    for i in range(teachers):
+        for j in range(objects):
+            solution[(i, j)] = model.NewBoolVar("X[{}, {}]".format(i, j))
+
+    for j in range(objects):
+        model.Add(sum(solution[(i, j)] for i in range(teachers)) == 1)
+        model.Add(sum(solution[(i, j)] * expertise[j][i] for i in range(teachers)) > 0)
+
+    for i in range(teachers):
+        model.Add(sum(solution[(i, j)] * t[j] for j in range(objects)) <= max_periods_per_teacher)
+        model.Add(min_periods_per_teacher <= sum(solution[(i, j)] * t[j] for j in range(objects)))
+
+    for item in conflict:
+        for i in item[1:]:
+            for j in range(teachers):
+                model.Add(solution[(j, item[0])] + solution[(j, i)] < 2)
+
+    model.Minimize(max(sum(solution[(i, j)] * t[j] for j in range(objects)) for i in range(teachers)))
+
+    solver = cp_model.CpSolver()
+    solver.Solve(model)
+
+    print("Solution found:")
+    for i in range(teachers):
+        print("Teacher {}: ".format(i), end='')
+        total = 0
+        for j in range(objects):
+            if solver.Value(solution[(i, j)]):
+                print(j, end=' ')
+                total += t[j]
+        print("\t Total:", total)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,5 +1,4 @@
 from ortools.linear_solver import pywraplp
- # this code is for Hieu, who has a dog brain 
 
 def main():
     teachers_num = 3

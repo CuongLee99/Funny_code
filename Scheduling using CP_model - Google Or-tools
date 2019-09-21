@@ -1,11 +1,12 @@
 from ortools.sat.python import cp_model
 
+
 def main():
     teachers = 3
     objects = 13
     t = [3, 3, 4, 3, 4, 3, 3, 3, 4, 3, 3, 4, 4]
-    max_periods_per_teacher = 15
-    min_periods_per_teacher = 10
+    max_t_per_teacher = 20
+    min_t_per_teacher = 10
 
     expertise = [[1,1,0],
                  [0,1,1],
@@ -38,16 +39,16 @@ def main():
         model.Add(sum(solution[(i, j)] for i in range(teachers)) == 1)
         model.Add(sum(solution[(i, j)] * expertise[j][i] for i in range(teachers)) > 0)
 
+    t_max = model.NewIntVar(min_t_per_teacher, max_t_per_teacher, "t")
     for i in range(teachers):
-        model.Add(sum(solution[(i, j)] * t[j] for j in range(objects)) <= max_periods_per_teacher)
-        model.Add(min_periods_per_teacher <= sum(solution[(i, j)] * t[j] for j in range(objects)))
+        model.Add(min_t_per_teacher <= sum(solution[(i, j)] * t[j] for j in range(objects)) <= t_max)
 
     for item in conflict:
         for i in item[1:]:
             for j in range(teachers):
                 model.Add(solution[(j, item[0])] + solution[(j, i)] < 2)
 
-    model.Minimize(max(sum(solution[(i, j)] * t[j] for j in range(objects)) for i in range(teachers)))
+    model.Minimize(t_max)
 
     solver = cp_model.CpSolver()
     solver.Solve(model)

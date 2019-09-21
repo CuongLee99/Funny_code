@@ -1,9 +1,10 @@
 from ortools.linear_solver import pywraplp
 
+
 def main():
     teachers_num = 3
     objects_num = 13
-    t_max = 16
+    t_max = 50
     t_min = 10
     t = [3, 3, 4, 3, 4, 3, 3, 3, 4, 3, 3, 4, 4]
 
@@ -47,12 +48,11 @@ def main():
             for i in range(teachers_num):
                 solver.Add(x[(i, 0)] + x[(i, obj)] <= 1)
 
+    f = solver.IntVar(t_min, t_max, "f")
     for i in range(teachers_num):
-        solver.Add(t_min <= sum(x[(i, j)] * t[j] for j in range(objects_num)) <= t_max)
-
+        solver.Add(t_min <= sum(x[(i, j)] * t[j] for j in range(objects_num)) <= f)
     # create objective function
-    for i in range(teachers_num):
-        solver.Minimize(sum(x[(i, j)] * t[j] for j in range(objects_num)))
+    solver.Minimize(f)
 
     res = solver.Solve()
     assert res == pywraplp.Solver.OPTIMAL, "NON OPTIMAL SOLUTION"
@@ -69,6 +69,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
